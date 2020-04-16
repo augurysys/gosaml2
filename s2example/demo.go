@@ -92,16 +92,19 @@ func main() {
 
 		assertionInfo, err := sp.RetrieveAssertionInfo(req.FormValue("SAMLResponse"))
 		if err != nil {
+			println("Authentication failed: %s", err.Error())
 			rw.WriteHeader(http.StatusForbidden)
 			return
 		}
 
 		if assertionInfo.WarningInfo.InvalidTime {
+			println("Authentication failed: invalid time")
 			rw.WriteHeader(http.StatusForbidden)
 			return
 		}
 
 		if assertionInfo.WarningInfo.NotInAudience {
+			println("Authentication failed: not in audience")
 			rw.WriteHeader(http.StatusForbidden)
 			return
 		}
@@ -118,10 +121,11 @@ func main() {
 
 		fmt.Fprintf(rw, "Warnings:\n")
 		fmt.Fprintf(rw, "%+v\n", assertionInfo.WarningInfo)
+		println("Authentication passed")
 	})
 
 	println("Visit this URL To Authenticate:")
-	authURL, err := sp.BuildAuthURL("")
+	authURL, err := sp.BuildAuthURL("https://app.augury.com")
 	if err != nil {
 		panic(err)
 	}
@@ -129,6 +133,7 @@ func main() {
 	println(authURL)
 
 	println("Supply:")
+	fmt.Printf("  Issuer      : %s\n", sp.IdentityProviderIssuer)
 	fmt.Printf("  SP ACS URL      : %s\n", sp.AssertionConsumerServiceURL)
 
 	err = http.ListenAndServe(":8080", nil)
